@@ -39,22 +39,6 @@ jobs:
         run: echo "CurrentTime=${{steps.current-time.outputs.formattedTime}}" # 빌드 완료 시간 출력하기
         shell: bash
 
-#      - name: Generate deployment package
-#        run: zip -r deploy.zip . -x '*.git*'
-#
-#        # Beanstalk Deploy 플러그인 사용
-#      - name: Beanstalk Deploy
-#        uses: einaregilsson/beanstalk-deploy@v19
-#        with:
-#          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-#          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-#          application_name: helloworld-webapp
-#          environment_name: Helloworldwebapp-env-1
-#          version_label: ${{github.run_number}}
-#          region: ap-northeast-2
-#          deployment_package: deploy.zip
-#          wait_for_environment_recovery: 180 # default wait time은 30초이며, 필자의 EB가 느려서 180초로 지정했습니다(지정 안하면 간혹 timeout 발생).
-
       - name: Generate deployment package
         run: |
           mkdir -p deploy
@@ -62,3 +46,15 @@ jobs:
           cp Procfile deploy/Procfile
           cp -r .ebextensions deploy/.ebextensions
           cd deploy && zip -r deploy.zip .
+
+        # Beanstalk Deploy 플러그인 사용
+      - name: Deploy to EB
+        uses: einaregilsson/beanstalk-deploy@v19
+        with:
+          aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          application_name: helloworld-webapp
+          environment_name: Helloworldwebapp-env-1
+          version_label: github-action-${{steps.current-time.outputs.formattedTime}}
+          region: ap-northeast-2
+          deployment_package: deploy/deploy.zip
